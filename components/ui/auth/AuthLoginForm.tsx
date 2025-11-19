@@ -12,12 +12,18 @@ import {
 import { Input } from "../input";
 import { Button } from "../button";
 import { Separator } from "../separator";
-
+import { authLoginAction } from "@/lib/actions/auth/authAction";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { LoaderCircle, LogInIcon } from "lucide-react";
 export default function AuthLoginForm({
   setContent,
 }: {
   setContent: (content: "LOGIN" | "REGISTER") => void;
 }) {
+  const router = useRouter();
+
   const form = useForm<AuthLoginTypes>({
     resolver: zodResolver(authLoginSchema),
     defaultValues: {
@@ -28,9 +34,32 @@ export default function AuthLoginForm({
 
   const formInputs = Object.keys(form.getValues()) as (keyof AuthLoginTypes)[];
 
+  const { mutate: login, isPending } = useMutation({
+    mutationFn: authLoginAction,
+    onSuccess: (data) => {
+      if (!data.success) {
+        toast.error(data.error);
+        return;
+      }
+      toast.success(data.message || "Logged in successfully");
+      router.push("/");
+    },
+    onError: (error) => {
+      toast.error(error.message || "There was an error logging in");
+    },
+  });
+
+  function handleSubmission(types: AuthLoginTypes) {
+    login(types);
+  }
+
   return (
     <Form {...form}>
-      <form action="" className="space-y-4">
+      <form
+        action=""
+        onSubmit={form.handleSubmit(handleSubmission)}
+        className="space-y-4"
+      >
         {formInputs.map((input) => (
           <FormField
             key={input}
@@ -42,7 +71,10 @@ export default function AuthLoginForm({
                   {input}
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input
+                    {...field}
+                    type={input === "password" ? "password" : "email"}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -50,7 +82,14 @@ export default function AuthLoginForm({
           />
         ))}
         <div className="flex flex-col gap-2">
-          <Button>Login</Button>
+          <Button disabled={isPending}>
+            {isPending ? (
+              <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <LogInIcon />
+            )}
+            Login
+          </Button>
           <div className="flex gap-2 items-center">
             <Separator className="flex-1" />
 

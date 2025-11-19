@@ -7,15 +7,9 @@ export default async function Home() {
 
   const { data: userData, error: userError } = await supabase.auth.getSession();
 
-  console.log(userData, userError);
-
   return (
     <>
       <AuthDialog open={!userData.session} />
-
-      <div className="">
-        <h1>meow meow</h1>
-      </div>
     </>
   );
 }

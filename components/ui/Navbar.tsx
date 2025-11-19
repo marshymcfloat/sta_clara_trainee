@@ -1,4 +1,5 @@
 import Link from "next/link";
+import UserButton from "../UserButton";
 
 export default function Navbar() {
   return (
@@ -8,6 +9,7 @@ export default function Navbar() {
         <Link href="/secret-1">Secret 1</Link>
         <Link href="/secret-2">Secret 2</Link>
         <Link href="/secret-3">Secret 3</Link>
+        <UserButton />
       </nav>
     </header>
   );

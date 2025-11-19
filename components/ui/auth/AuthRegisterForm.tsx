@@ -13,7 +13,7 @@ import {
 } from "../form";
 import { Input } from "../input";
 import { Button } from "../button";
-import { ArrowLeftIcon, UserPlusIcon } from "lucide-react";
+import { ArrowLeftIcon, LoaderCircle, UserPlusIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { authRegisterAction } from "@/lib/actions/auth/authAction";
 import { toast } from "sonner";
@@ -47,10 +47,13 @@ export default function AuthRegisterForm({
         toast.error(data.error);
         return;
       }
-      toast.success(data.message || "Account created successfully");
+      toast.success("Please check your email for verification");
+      setContent("LOGIN");
     },
     onError: (error) => {
-      toast.error(error.message);
+      toast.error(
+        error.message || "There was an error registering your account"
+      );
     },
   });
 
@@ -106,7 +109,11 @@ export default function AuthRegisterForm({
               Back
             </Button>
             <Button type="submit" disabled={isPending}>
-              <UserPlusIcon className="w-4 h-4 mr-2" />
+              {isPending ? (
+                <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <UserPlusIcon className="w-4 h-4 mr-2" />
+              )}
               Register
             </Button>
           </div>
