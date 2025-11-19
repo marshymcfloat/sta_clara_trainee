@@ -1,5 +1,21 @@
-import Image from "next/image";
+import AuthDialog from "@/components/ui/auth/AuthDialog";
+import { createClient } from "@/lib/utils/supabase/server";
+import { cookies } from "next/headers";
 
-export default function Home() {
-  return <div className=""></div>;
+export default async function Home() {
+  const supabase = await createClient(cookies());
+
+  const { data: userData, error: userError } = await supabase.auth.getSession();
+
+  console.log(userData, userError);
+
+  return (
+    <>
+      <AuthDialog open={!userData.session} />
+
+      <div className="">
+        <h1>meow meow</h1>
+      </div>
+    </>
+  );
 }
