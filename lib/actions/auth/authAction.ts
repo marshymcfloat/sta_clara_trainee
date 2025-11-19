@@ -199,6 +199,12 @@ export async function authDeleteAccountAction() {
 
     const userId = userData.user.id;
 
+    const { error: signOutErr } = await supabaseUserClient.auth.signOut();
+
+    if (signOutErr) {
+      console.error("Sign out error:", signOutErr);
+    }
+
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error(
         "SUPABASE_SERVICE_ROLE_KEY is not set in environment variables"

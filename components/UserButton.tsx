@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import {
   DropdownMenu,
@@ -8,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LoaderCircle, LogOut, Trash } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   authDeleteAccountAction,
   authLogoutAction,
@@ -17,6 +18,18 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/utils/supabase/client";
 import { Skeleton } from "./ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Button } from "./ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { queryClient } from "./providers/TanstackProvider";
 
 async function fetchUserProfile() {
   const supabase = createClient();
@@ -38,7 +51,7 @@ async function fetchUserProfile() {
 
 export default function UserButton() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["user-profile"],
@@ -63,9 +76,8 @@ export default function UserButton() {
         return;
       }
 
-      queryClient.setQueryData(["user-profile"], null);
-
       toast.success(data.message || "Logged out successfully");
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       router.refresh();
       router.push("/");
     },
@@ -79,7 +91,10 @@ export default function UserButton() {
         return;
       }
       toast.success(data.message || "Account deleted successfully");
-      logout();
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      queryClient.clear();
+      router.refresh();
+      router.push("/");
     },
     onError: (error) => {
       toast.error(error.message || "There was an error deleting your account");
@@ -95,34 +110,68 @@ export default function UserButton() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Avatar className="cursor-pointer p-4 bg-primary text-primary-foreground font-bold">
-          <AvatarFallback>{avatarInitials}</AvatarFallback>
-        </Avatar>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem
-          className="text-destructive hover:text-destructive!"
-          onClick={() => deleteAccount()}
-          disabled={isPending}
-        >
-          {isPending ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <Trash color="red" />
-          )}
-          Delete Account
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled={isPending} onClick={() => logout()}>
-          {isPending ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <LogOut />
-          )}
-          Logout
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      {user ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Avatar className="cursor-pointer p-4 bg-primary text-primary-foreground font-bold">
+              <AvatarFallback>{avatarInitials}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              className="text-destructive hover:text-destructive!"
+              disabled={isPending}
+              onSelect={(e) => {
+                e.preventDefault();
+                setDeleteDialogOpen(true);
+              }}
+            >
+              {isPending ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <Trash color="red" />
+              )}
+              Delete Account
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={isPending} onClick={() => logout()}>
+              {isPending ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <LogOut />
+              )}
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <Button>Login</Button>
+      )}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete your account? This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  deleteAccount();
+                }}
+              >
+                Delete
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
