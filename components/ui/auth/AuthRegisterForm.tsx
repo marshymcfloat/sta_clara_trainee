@@ -76,7 +76,11 @@ export default function AuthRegisterForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="capitalize font-medium">
-                  {input}
+                  {input === "fullname"
+                    ? "Full Name"
+                    : input === "confirmPassword"
+                    ? "Confirm Password"
+                    : input}
                 </FormLabel>
                 <FormControl>
                   <Input

@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { queryClient } from "./providers/TanstackProvider";
+import Link from "next/link";
 
 async function fetchUserProfile() {
   const supabase = createClient();
@@ -112,40 +113,47 @@ export default function UserButton() {
   return (
     <>
       {user ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Avatar className="cursor-pointer p-4 bg-primary text-primary-foreground font-bold">
-              <AvatarFallback>{avatarInitials}</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem
-              className="text-destructive hover:text-destructive!"
-              disabled={isPending}
-              onSelect={(e) => {
-                e.preventDefault();
-                setDeleteDialogOpen(true);
-              }}
-            >
-              {isPending ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : (
-                <Trash color="red" />
-              )}
-              Delete Account
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={isPending} onClick={() => logout()}>
-              {isPending ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : (
-                <LogOut />
-              )}
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <Link href="/secret-1">Secret 1</Link>
+          <Link href="/secret-2">Secret 2</Link>
+          <Link href="/secret-3">Secret 3</Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="cursor-pointer p-4 bg-primary text-primary-foreground font-bold">
+                <AvatarFallback>{avatarInitials}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                className="text-destructive hover:text-destructive!"
+                disabled={isPending}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                {isPending ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <Trash color="red" />
+                )}
+                Delete Account
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={isPending} onClick={() => logout()}>
+                {isPending ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <LogOut />
+                )}
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
       ) : (
-        <Button>Login</Button>
+        <>
+          <Button>Login</Button>
+        </>
       )}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
