@@ -9,6 +9,7 @@ import {
 import { createClient } from "@/lib/utils/supabase/server";
 import { cookies } from "next/headers";
 import { StringFormatter } from "@/lib/utils";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 export async function authRegisterAction(types: AuthRegisterTypes) {
   try {
@@ -33,10 +34,76 @@ export async function authRegisterAction(types: AuthRegisterTypes) {
       },
     });
 
-    if (error) {
+    if (error || !data.user) {
       return {
         success: false,
-        error: error.message || "There was an error registering your account",
+        error: error?.message || "There was an error registering your account",
+      };
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error(
+        "SUPABASE_SERVICE_ROLE_KEY is not set in environment variables"
+      );
+      return {
+        success: false,
+        error: "Server configuration error. Please contact support.",
+      };
+    }
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const { error: profileError } = await supabaseAdmin.from("Profile").upsert(
+      {
+        id: data.user.id,
+        email: types.email,
+        fullname: StringFormatter(types.fullname),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        onConflict: "id",
+      }
+    );
+
+    if (profileError) {
+      console.error("Profile creation error:", profileError);
+
+      if (
+        profileError.message?.includes("Invalid API key") ||
+        profileError.message?.includes("invalid") ||
+        profileError.message?.toLowerCase().includes("api key") ||
+        profileError.code === "PGRST301"
+      ) {
+        return {
+          success: false,
+          error:
+            "Invalid API key. Please check your SUPABASE_SERVICE_ROLE_KEY in .env file.",
+        };
+      }
+
+      if (
+        profileError.message?.includes("does not exist") ||
+        profileError.code === "42P01"
+      ) {
+        return {
+          success: false,
+          error:
+            "Profile table not found. Please run the SQL setup script in Supabase.",
+        };
+      }
+
+      return {
+        success: false,
+        error: profileError.message || "Failed to create user profile",
       };
     }
 
@@ -113,6 +180,94 @@ export async function authLogoutAction() {
     return {
       success: false,
       error: "There was an error logging out",
+    };
+  }
+}
+
+export async function authDeleteAccountAction() {
+  try {
+    const supabaseUserClient = await createClient(cookies());
+    const { data: userData, error: userErr } =
+      await supabaseUserClient.auth.getUser();
+
+    if (userErr || !userData?.user) {
+      return {
+        success: false,
+        error: "Please login first",
+      };
+    }
+
+    const userId = userData.user.id;
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error(
+        "SUPABASE_SERVICE_ROLE_KEY is not set in environment variables"
+      );
+      return {
+        success: false,
+        error: "Server configuration error. Please contact support.",
+      };
+    }
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
+    const { error: profileErr } = await supabaseAdmin
+      .from("Profile")
+      .delete()
+      .eq("id", userId);
+
+    if (profileErr) {
+      console.error("Profile delete error:", profileErr);
+
+      if (
+        profileErr.message?.includes("Invalid API key") ||
+        profileErr.message?.includes("invalid") ||
+        profileErr.message?.toLowerCase().includes("api key") ||
+        profileErr.code === "PGRST301"
+      ) {
+        return {
+          success: false,
+          error:
+            "Invalid API key. Please check your SUPABASE_SERVICE_ROLE_KEY in .env file.",
+        };
+      }
+
+      return {
+        success: false,
+        error: profileErr.message || "Error deleting profile data",
+      };
+    }
+
+    const { error: deleteUserErr } = await supabaseAdmin.auth.admin.deleteUser(
+      userId
+    );
+
+    if (deleteUserErr) {
+      console.error("Auth delete error:", deleteUserErr);
+      return {
+        success: false,
+        error: deleteUserErr.message || "Error deleting auth account",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Account deleted successfully",
+    };
+  } catch (err) {
+    console.error(err);
+    return {
+      success: false,
+      error: "There was an unexpected error deleting your account",
     };
   }
 }

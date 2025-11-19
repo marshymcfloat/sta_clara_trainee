@@ -13,10 +13,12 @@ import { Input } from "../input";
 import { Button } from "../button";
 import { Separator } from "../separator";
 import { authLoginAction } from "@/lib/actions/auth/authAction";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { LoaderCircle, LogInIcon } from "lucide-react";
+import { queryClient } from "@/components/providers/TanstackProvider";
+
 export default function AuthLoginForm({
   setContent,
 }: {
@@ -36,12 +38,16 @@ export default function AuthLoginForm({
 
   const { mutate: login, isPending } = useMutation({
     mutationFn: authLoginAction,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (!data.success) {
         toast.error(data.error);
         return;
       }
+
+      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+
       toast.success(data.message || "Logged in successfully");
+      router.refresh();
       router.push("/");
     },
     onError: (error) => {
