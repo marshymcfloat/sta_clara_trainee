@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen  bg-linear-to-br from-pink-50 to-pink-200`}
       >
         <TanstackProvider>
           <Navbar />

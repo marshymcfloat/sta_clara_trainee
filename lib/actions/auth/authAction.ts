@@ -67,7 +67,7 @@ export async function authRegisterAction(types: AuthRegisterTypes) {
         id: data.user.id,
         email: types.email,
         fullname: StringFormatter(types.fullname),
-        updatedAt: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
       {
         onConflict: "id",
